@@ -29,6 +29,18 @@ The scripts are designed to pull monthly datasets by modifying the date filters 
     * `combined_sold_residential.csv`
     * `combined_listings_residential.csv`
 
+* `week2_3_eda.py`
+  * Loads the combined sold and listing datasets produced by `week1_dataset_aggregation.py`.
+  * Performs exploratory data analysis (EDA) across both datasets.
+  * Step 1 — prints row and column counts for both datasets.
+  * Step 2 — prints all column data types to identify mistyped fields (e.g. dates stored as strings).
+  * Step 3 — calculates missing value counts and percentages per column, flags columns with more than 90% missing values, and drops flagged columns from both datasets.
+  * Step 4 — produces a numeric distribution summary (count, mean, std, min, percentiles, max) for key fields: `ClosePrice`, `ListPrice`, `OriginalListPrice`, `LivingArea`, `LotSizeAcres`, `BedroomsTotal`, `BathroomsTotalInteger`, `DaysOnMarket`, and `YearBuilt`.
+  * Prints unique property types found in each dataset.
+  * Saves the cleaned datasets as:
+    * `sold_eda.csv`
+    * `listing_eda.csv`
+
 ---
 
 ## Requirements
@@ -121,6 +133,38 @@ Done! Files saved.
 
 ---
 
+### Running the Weeks 2-3 EDA Script
+Ensure `combined_sold_residential.csv` and `combined_listings_residential.csv` are present in your csv folder before running. Update the `csv_folder` path in the script if needed:
+```python
+csv_folder = "/Users/your-username/csv"
+```
+
+Then run:
+```bash
+python week2_3_eda.py
+```
+
+Expected output:
+```text
+Sold Dataset
+Rows: XXX,XXX
+Columns: 84
+Listing Dataset
+Rows: XXX,XXX
+Columns: 84
+Sold columns with >90% missing: [column names]
+Listing columns with >90% missing: [column names]
+Sold columns before drop: 84
+Sold columns after drop: 69
+Listing columns before drop: 84
+Listing columns after drop: 71
+Sold Numeric Summary: [statistics table]
+Listing Numeric Summary: [statistics table]
+Saved sold_eda.csv and listing_eda.csv
+```
+
+---
+
 ## Output
 
 ### Extraction Scripts
@@ -141,6 +185,32 @@ CRMLSListing202603.csv
 combined_sold_residential.csv      — All residential sold transactions, January 2024 through May 2026
 combined_listings_residential.csv  — All residential listings, January 2024 through May 2026
 ```
+
+### Weeks 2-3 EDA Script
+```text
+sold_eda.csv     — Sold dataset with >90% missing columns removed, ready for further analysis
+listing_eda.csv  — Listing dataset with >90% missing columns removed, ready for further analysis
+```
+
+---
+
+## Key EDA Findings (Weeks 2-3)
+
+### Dataset Size
+* Sold: 430,436 rows, 84 columns (69 after dropping high-missing columns)
+* Listing: 592,023 rows, 84 columns (71 after dropping high-missing columns)
+
+### Missing Value Summary
+* 15 columns dropped from sold dataset, 13 from listing dataset, all with more than 90% missing values
+* Notable dropped columns: `WaterfrontYN` (99.94%), `FireplacesTotal` (100%), `TaxYear` (100%), `ElementarySchoolDistrict` (100%)
+
+### Numeric Field Observations
+* Median close price: $825,000 (sold) — median is preferred over mean due to heavy skew from outliers
+* Median days on market: 18 days — mean of 37 days is inflated by extreme outliers
+* Invalid values identified for cleaning in Weeks 4-5: negative `DaysOnMarket` values, `ClosePrice` of $0, `LivingArea` of 0
+
+### Date Consistency Issues
+* 64 records where `CloseDate` is before `ListingContractDate` — flagged for cleaning in Weeks 4-5
 
 ---
 
