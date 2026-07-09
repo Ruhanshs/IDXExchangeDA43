@@ -75,3 +75,52 @@ print(listing_cleaned["PropertyType"].unique())
 sold_cleaned.to_csv(os.path.join(csv_folder, "sold_eda.csv"), index=False)
 listing_cleaned.to_csv(os.path.join(csv_folder, "listing_eda.csv"), index=False)
 print("Saved sold_eda.csv and listing_eda.csv")
+
+#FRED mortgage data
+url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US"
+
+mortgage = pd.read_csv(
+    url,
+    parse_dates=["observation_date"]
+)
+
+mortgage.columns = [
+    "date",
+    "rate_30yr_fixed"
+]
+
+
+# Create a month key
+mortgage["year_month"] = mortgage["date"].dt.to_period("M")
+
+
+#Getting monthly mortgage rates
+mortgage_monthly = (
+    mortgage.groupby("year_month")["rate_30yr_fixed"]
+    .mean()
+    .reset_index()
+)
+#creating year_month column in sold and listing files
+sold_cleaned["CloseDate"] = pd.to_datetime(sold_cleaned["CloseDate"])
+sold_cleaned["year_month"] = sold_cleaned["CloseDate"].dt.to_period("M")
+listing_cleaned["ListingContractDate"] = pd.to_datetime(listing_cleaned["ListingContractDate"])
+listing_cleaned["year_month"] = (listing_cleaned["ListingContractDate"].dt.to_period("M"))
+
+#merging mortgage column into sold and listing files
+sold_with_rates = sold_cleaned.merge( mortgage_monthly, on="year_month", how="left")
+listing_with_rates = listing_cleaned.merge( mortgage_monthly, on="year_month", how="left")
+#check of null values
+print("Null mortgage rates in sold:", sold_with_rates["rate_30yr_fixed"].isnull().sum())
+print("Null mortgage rates in listing:", listing_with_rates["rate_30yr_fixed"].isnull().sum())
+
+#save updated datasets
+sold_with_rates.to_csv(
+    os.path.join(csv_folder, "sold_with_mortgage.csv"),
+    index=False
+)
+
+listing_with_rates.to_csv(
+    os.path.join(csv_folder, "listing_with_mortgage.csv"),
+    index=False
+)
+
