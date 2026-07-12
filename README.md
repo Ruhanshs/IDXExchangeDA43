@@ -3,7 +3,6 @@
 This repository contains my internship project work for IDX Exchange. The project focuses on extracting CRMLS real estate listing and sold-property data from the CoreLogic Trestle API and exporting the results into CSV files for analysis.
 The scripts are designed to pull monthly datasets by modifying the date filters within each script. Data is retrieved through authenticated API requests and written to CSV format for downstream analysis and reporting.
 
----
 
 ## Repository Contents
 
@@ -37,11 +36,17 @@ The scripts are designed to pull monthly datasets by modifying the date filters 
   * Step 3 — calculates missing value counts and percentages per column, flags columns with more than 90% missing values, and drops flagged columns from both datasets.
   * Step 4 — produces a numeric distribution summary (count, mean, std, min, percentiles, max) for key fields: `ClosePrice`, `ListPrice`, `OriginalListPrice`, `LivingArea`, `LotSizeAcres`, `BedroomsTotal`, `BathroomsTotalInteger`, `DaysOnMarket`, and `YearBuilt`.
   * Prints unique property types found in each dataset.
-  * Saves the cleaned datasets as:
+  * Fetches the national 30-year fixed mortgage rate (MORTGAGE30US) directly from the FRED API.
+  * Resamples the weekly mortgage rate data to monthly averages.
+  * Creates a `year_month` join key from `CloseDate` (sold) and `ListingContractDate` (listing).
+  * Merges the monthly mortgage rates onto both datasets using the `year_month` key.
+  * Validates the merge by checking for any null mortgage rate values after joining.
+  * Saves the cleaned and enriched datasets as:
     * `sold_eda.csv`
     * `listing_eda.csv`
+    * `sold_with_mortgage.csv`
+    * `listing_with_mortgage.csv`
 
----
 
 ## Requirements
 
@@ -54,7 +59,6 @@ Install required packages:
 pip install requests pandas
 ```
 
----
 
 ## Running the Scripts
 
@@ -82,7 +86,6 @@ Run the script:
 python crmls_sold.py
 ```
 
----
 
 ### Generating Monthly Listing Data
 The listing data script exports all listings whose `ListingContractDate` falls within the specified month.
@@ -109,7 +112,6 @@ Run the script:
 python crmls_listed.py
 ```
 
----
 
 ### Running the Week 1 Aggregation Script
 Before running, ensure all monthly CSV files are downloaded into your local csv folder and update the `csv_folder` path in the script:
@@ -131,13 +133,14 @@ Listings rows after filter:  XXX,XXX
 Done! Files saved.
 ```
 
----
 
 ### Running the Weeks 2-3 EDA Script
 Ensure `combined_sold_residential.csv` and `combined_listings_residential.csv` are present in your csv folder before running. Update the `csv_folder` path in the script if needed:
 ```python
 csv_folder = "/Users/your-username/csv"
 ```
+
+An internet connection is required to fetch live mortgage rate data from the FRED API.
 
 Then run:
 ```bash
@@ -161,9 +164,11 @@ Listing columns after drop: 71
 Sold Numeric Summary: [statistics table]
 Listing Numeric Summary: [statistics table]
 Saved sold_eda.csv and listing_eda.csv
+Null mortgage rates in sold: 0
+Null mortgage rates in listing: 0
+Saved sold_with_mortgage.csv and listing_with_mortgage.csv
 ```
 
----
 
 ## Output
 
@@ -188,11 +193,12 @@ combined_listings_residential.csv  — All residential listings, January 2024 th
 
 ### Weeks 2-3 EDA Script
 ```text
-sold_eda.csv     — Sold dataset with >90% missing columns removed, ready for further analysis
-listing_eda.csv  — Listing dataset with >90% missing columns removed, ready for further analysis
+sold_eda.csv                — Sold dataset with >90% missing columns removed
+listing_eda.csv             — Listing dataset with >90% missing columns removed
+sold_with_mortgage.csv      — Sold dataset enriched with monthly 30-year fixed mortgage rates
+listing_with_mortgage.csv   — Listing dataset enriched with monthly 30-year fixed mortgage rates
 ```
 
----
 
 ## Key EDA Findings (Weeks 2-3)
 
@@ -212,17 +218,10 @@ listing_eda.csv  — Listing dataset with >90% missing columns removed, ready fo
 ### Date Consistency Issues
 * 64 records where `CloseDate` is before `ListingContractDate` — flagged for cleaning in Weeks 4-5
 
----
-
-## Notes
-* Use the first day of the target month as the start date.
-* Use the first day of the following month as the end date.
-* Ensure the CSV filename matches the month being extracted.
-* Large datasets are automatically retrieved using API pagination.
-* Verify that the extracted file corresponds to the intended month before distribution.
-* Some monthly files may use the `_filled` filename suffix — the aggregation script handles both formats automatically.
-
----
+### Mortgage Rate Enrichment
+* 30-year fixed mortgage rate data fetched from FRED (MORTGAGE30US series)
+* Weekly rates resampled to monthly averages and merged onto both datasets using a `year_month` key
+* Zero null mortgage rate values after merge, confirming a complete join
 
 ## Internship Project
 This repository is maintained throughout my IDX Exchange internship to document project progress, track individual contributions, and facilitate collaboration and feedback from teammates.
