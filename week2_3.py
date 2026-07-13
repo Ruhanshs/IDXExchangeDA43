@@ -35,7 +35,11 @@ print(listing_flagged)
 numeric_fields = ["ClosePrice", "ListPrice", "OriginalListPrice", "LivingArea", 
                   "LotSizeAcres", "BedroomsTotal", "BathroomsTotalInteger", 
                   "DaysOnMarket", "YearBuilt"]
-#Dropping Columns
+#Dropping Columns:
+#'WaterfrontYN', 'BasementYN', 'FireplacesTotal', 'AboveGradeFinishedArea', 
+#'TaxAnnualAmount', 'BuilderName', 'TaxYear', 'BuildingAreaTotal', 
+#'ElementarySchoolDistrict', 'CoBuyerAgentFirstName', 'BelowGradeFinishedArea', 
+#'BusinessType', 'CoveredSpaces', 'LotSizeDimensions', 'MiddleOrJuniorSchoolDistrict'
 cols_to_drop = []
 for col in sold_flagged.index:
     cols_to_drop.append(col)
