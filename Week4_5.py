@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+import geopandas as gpd
+from shapely.geometry import Point
 csv_folder = "/Users/rsatwik/csv"
 sold = pd.read_csv(os.path.join(csv_folder, "sold_with_mortgage.csv"), low_memory = False)
 listing = pd.read_csv(os.path.join(csv_folder, "listing_with_mortgage.csv"),low_memory = False)
@@ -115,10 +117,57 @@ listing = listing[
 print("Sold rows after removing invalid:", len(sold))
 print("Listing rows after removing invalid:", len(listing))
 
+#Data Consistency Check
+sold["listing_after_close_flag"] = sold["ListingContractDate"] > sold["CloseDate"]
+sold["purchase_after_close_flag"]  = sold["PurchaseContractDate"] > sold["CloseDate"]   
+sold["negative_timeline_flag"] = sold["PurchaseContractDate"] < sold["ListingContractDate"]  
+
+#Geographic checks
+sold["flag_missing_coords"] = sold["Latitude"].isnull() | sold["Longitude"].isnull()
+sold["flag_zero_coords"] = (sold["Latitude"] == 0) | (sold["Longitude"] == 0)
+sold["flag_positive_longitude"] = sold["Longitude"] > 0
+print("Geographic Data Checks for Sold:")
+print("Missing coordinates:", sold["flag_missing_coords"].sum())
+print("Zero coordinates:", sold["flag_zero_coords"].sum())
+print("Positive longitude (should be negative for CA):", sold["flag_positive_longitude"].sum())
+
+listing["flag_missing_coords"] = listing["Latitude"].isnull() | listing["Longitude"].isnull()
+listing["flag_zero_coords"] = (listing["Latitude"] == 0) | (listing["Longitude"] == 0)
+listing["flag_positive_longitude"] = listing["Longitude"] > 0
+
+print("\nGeographic Data Checks - Listing:")
+print("Missing coordinates:", listing["flag_missing_coords"].sum())
+print("Zero coordinates:", listing["flag_zero_coords"].sum())
+print("Positive longitude (should be negative for CA):", listing["flag_positive_longitude"].sum())
+
+#School district joining
+
+districts = gpd.read_file(os.path.join(csv_folder, "DistrictAreas2526_-284845464123469011.geojson"))
+districts = districts[districts["DistrictType"] == "Unified"]
+print(("Unified school districts found:", len(districts)))
+
+sold_geo = gpd.GeoDataFrame(sold,geometry=gpd.points_from_xy
+                            (sold["Longitude"], sold["Latitude"]),crs="EPSG:4326")
+listing_geo = gpd.GeoDataFrame(listing,geometry=gpd.points_from_xy
+                               (listing["Longitude"], listing["Latitude"]),crs="EPSG:4326")
+districts = districts.to_crs("EPSG:4326")    
+
+sold_with_districts = gpd.sjoin(sold_geo, districts[["DistrictName", "geometry"]], 
+                                 how="left", predicate="within")   
+listing_with_districts = gpd.sjoin(listing_geo, districts[["DistrictName", "geometry"]], 
+                                    how="left", predicate="within")
+sold["DistrictName"] = sold_with_districts["DistrictName"].values
+listing["DistrictName"] = listing_with_districts["DistrictName"].values
+print("Sold properties with district assigned:", sold["DistrictName"].notna().sum())
+print("Listing properties with district assigned:", listing["DistrictName"].notna().sum())
+
 #Save CSV files
 sold.to_csv(os.path.join(csv_folder, "sold_week4_5.csv"), index=False)
 listing.to_csv(os.path.join(csv_folder, "listing_week4_5.csv"), index=False)
 print("Saved sold_week4_5.csv and listing_week4_5.csv")
+
+
+
 
 
 
