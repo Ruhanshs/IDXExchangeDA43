@@ -28,6 +28,12 @@ sold["contract_to_close_days"] = (sold["CloseDate"] - sold["PurchaseContractDate
 print(sold[["ClosePrice", "OriginalListPrice", "price_ratio", "price_per_sqft", 
             "listing_to_contract_days", "contract_to_close_days"]].head())
 
+listing["ListingContractDate"] = pd.to_datetime(listing["ListingContractDate"])
+
+listing["Year"] = listing["ListingContractDate"].dt.year
+listing["Month"] = listing["ListingContractDate"].dt.month
+listing["YrMo"] = listing["ListingContractDate"].dt.to_period("M")
+
 #Segment analysis
 
 print("Segment Analysis by PropertySubType:")
@@ -44,3 +50,26 @@ print(sold.groupby("ListOfficeName")[["ClosePrice"]].median().sort_values("Close
 # segment analysis by BuyerOfficeName
 print("\nTop 10 Buyer Offices by Median Close Price:")
 print(sold.groupby("BuyerOfficeName")[["ClosePrice"]].median().sort_values("ClosePrice", ascending=False).head(10))
+
+print("Listing Segment Analysis by PropertySubType:")
+print(listing.groupby("PropertySubType")[["ListPrice", "DaysOnMarket"]].median())
+
+print("\nListing Segment Analysis by CountyOrParish:")
+print(listing.groupby("CountyOrParish")[["ListPrice", "DaysOnMarket"]].median())
+
+sold.to_csv(os.path.join(csv_folder, "sold_week6.csv"), index=False)
+listing.to_csv(os.path.join(csv_folder, "listing_week6.csv"), index=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
